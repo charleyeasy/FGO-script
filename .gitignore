@@ -1,0 +1,10 @@
+test.py
+/__pycache__/
+/config/__pycache__/
+/core/__pycache__/
+UserData/config/*.ini
+tmp
+.vscode/
+tempCodeRunnerFile.py
+main.py.2fcb21d17631f7801ca360fee180cde5.tmp
+screenshot.png

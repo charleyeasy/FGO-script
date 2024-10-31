@@ -1,0 +1,2 @@
+python capture_screenshot.py
+pause
