@@ -61,6 +61,9 @@ def chk_skill(skill):
                         else:
                             cast_skill.append(
                                 "round.select_master_skill(%s)" % skill[i+1])
+                    else:
+                        cast_skill.append(
+                            "round.select_master_skill(%s)" % skill[i+1])
             elif skill[i] == 'x':
                 cast_skill.append(
                     "round.select_master_skill(3, %s, %s)" % (skill[i+1], skill[i+2]))
@@ -82,7 +85,12 @@ def chk_skill(skill):
 
 def decode(code):
     combat_order = []
-    for i in range(3):
+        # 檢查 crd3_str 和 battle3_str 是否為空字串
+    if code[2] == "" and code[5] == "":
+        loop_range = 2  # 如果 crd3_str 和 battle3_str 都是空字串，則迴圈範圍為 2
+    else:
+        loop_range = 3  # 否則，迴圈範圍為 3
+    for i in range(loop_range):
         combat_order += chk_skill(code[i])
         if len(chk_card(code[i+3])) == 1:
             seq = chk_card(code[i+3])

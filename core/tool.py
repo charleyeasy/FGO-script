@@ -350,61 +350,67 @@ class tool():
         print(border)
         '''
         unique_support_positions = list(all_matched_support_positions)
+        # 如果 clothes[0] 是 "all"，直接返回 unique_support_positions
+        if clothes[0] == "all":
+            for sup_pos in unique_support_positions:
+                print(f"{bright_cyan}助戰好友位置: {sup_pos}{reset}")
+                sup_pos = [x*self.adbkit.capmuti for x in sup_pos]
+                return sup_pos, find_height * self.adbkit.capmuti, find_width * self.adbkit.capmuti  # 返回符合條件的support位置
+        else:
+            # 處理禮裝圖片比對
+            clothes_img = cv2.imread(clothes[0])
 
-        # 處理禮裝圖片比對
-        clothes_img = cv2.imread(clothes[0])
-
-        all_matched_clothes_positions = set()
-        
-        result = cv2.matchTemplate(
-            self.screenshot, clothes_img, cv2.TM_CCOEFF_NORMED)
-        locations = np.where(result >= acc)
-        
-        for y, x in zip(locations[0], locations[1]):
-            # 檢查是否有相近的位置已存在
-            is_duplicate = False
-            positions_to_remove = set()
+            all_matched_clothes_positions = set()
             
-            for existing_x, existing_y in all_matched_clothes_positions:
-                if (abs(x - existing_x) < threshold and 
-                    abs(y - existing_y) < threshold):
-                    # 找到相近位置，使用平均值
-                    new_x = (x + existing_x) // 2
-                    new_y = (y + existing_y) // 2
-                    positions_to_remove.add((existing_x, existing_y))
-                    x, y = new_x, new_y
-                    is_duplicate = True
+            result = cv2.matchTemplate(
+                self.screenshot, clothes_img, cv2.TM_CCOEFF_NORMED)
+            locations = np.where(result >= 0.95)
             
-            # 移除舊的位置並添加新的平均位置
-            for pos in positions_to_remove:
-                all_matched_clothes_positions.remove(pos)
-            all_matched_clothes_positions.add((x, y))
-        '''
-        title = "[Clothes]  All Matched Positions:"
-        max_length = max(len(title), max(len(f"Position: {pos}") for pos in all_matched_clothes_positions) if all_matched_clothes_positions else 0)
-        
-        border = f"{bright_cyan}+{'-' * (max_length + 4)}+{reset}"
-        
-        print(border)
-        print(f"{bright_cyan}| {title:<{max_length}} |{reset}")
-        print(border)
-        for pos in all_matched_clothes_positions:
-            print(f"{bright_cyan}| Position: {str(pos):<{max_length-10}} |{reset}")
-        print(border)
-        '''
-        unique_clothes_positions = list(all_matched_clothes_positions)
-        
-        # 比對support和clothes的位置關係
-        threshold_y = 100  # y軸容許的最大差距
+            for y, x in zip(locations[0], locations[1]):
+                # 檢查是否有相近的位置已存在
+                is_duplicate = False
+                positions_to_remove = set()
+                
+                for existing_x, existing_y in all_matched_clothes_positions:
+                    if (abs(x - existing_x) < threshold and 
+                        abs(y - existing_y) < threshold):
+                        # 找到相近位置，使用平均值
+                        new_x = (x + existing_x) // 2
+                        new_y = (y + existing_y) // 2
+                        positions_to_remove.add((existing_x, existing_y))
+                        x, y = new_x, new_y
+                        is_duplicate = True
+                
+                # 移除舊的位置並添加新的平均位置
+                for pos in positions_to_remove:
+                    all_matched_clothes_positions.remove(pos)
+                all_matched_clothes_positions.add((x, y))
+            '''
+            title = "[Clothes]  All Matched Positions:"
+            max_length = max(len(title), max(len(f"Position: {pos}") for pos in all_matched_clothes_positions) if all_matched_clothes_positions else 0)
+            
+            border = f"{bright_cyan}+{'-' * (max_length + 4)}+{reset}"
+            
+            print(border)
+            print(f"{bright_cyan}| {title:<{max_length}} |{reset}")
+            print(border)
+            for pos in all_matched_clothes_positions:
+                print(f"{bright_cyan}| Position: {str(pos):<{max_length-10}} |{reset}")
+            print(border)
+            '''
+            unique_clothes_positions = list(all_matched_clothes_positions)
+            
+            # 比對support和clothes的位置關係
+            threshold_y = 110  # y軸容許的最大差距
 
-        for sup_pos in unique_support_positions:
-            for clothes_pos in unique_clothes_positions:
-                y_diff = clothes_pos[1] - sup_pos[1]  # clothes應在support下方
-                if 0 < y_diff < threshold_y:  # y差距在容許範圍內且clothes在下方
-                    print(f"{bright_cyan}助戰好友位置: {sup_pos}{reset}")
-                    sup_pos = [x*self.adbkit.capmuti for x in sup_pos]
-                    return sup_pos, find_height*self.adbkit.capmuti, find_width*self.adbkit.capmuti # 返回符合條件的support位置
-    
+            for sup_pos in unique_support_positions:
+                for clothes_pos in unique_clothes_positions:
+                    y_diff = clothes_pos[1] - sup_pos[1]  # clothes應在support下方
+                    if 0 < y_diff < threshold_y:  # y差距在容許範圍內且clothes在下方
+                        print(f"{bright_cyan}助戰好友位置: {sup_pos}{reset}")
+                        sup_pos = [x*self.adbkit.capmuti for x in sup_pos]
+                        return sup_pos, find_height*self.adbkit.capmuti, find_width*self.adbkit.capmuti # 返回符合條件的support位置
+        
         return False
 
     def compare(self, img_list, acc=0.85, special=False):

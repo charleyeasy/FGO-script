@@ -10,7 +10,7 @@ import threading
 class auto():
     def __init__(self, ckp, spt, cls,servant_class,apl_count, apl_type, devices, timer=12000, run_time=1, ver="JP", debug=0):
         self.path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.checkpoint = ckp
+        self.checkpoint = ckp #menu.png
         self.support = []
         self.support = self.get_support(spt)
         self.clothes = self.get_clothes(cls)
@@ -50,6 +50,9 @@ class auto():
             print("無法找到助戰圖片")
 
     def get_clothes(self, cls):
+        if cls == "all" or cls == "('all')":
+            print(cls)
+            return ["all"]
         if os.path.isfile("{0}/UserData/support/{1}.png".format(self.path, cls)):
             clothes = []
             clothes.append("{0}/UserData/support/{1}.png".format(self.path, cls))
@@ -92,7 +95,10 @@ class auto():
             self.adbtool.tap((1100, 170))
         time.sleep(0.5)
         self.t_begin = time.time()
-        if self.adbtool.compare(self.get_img_path("noap.png")):
+        noapcheck1=self.adbtool.compare(self.get_img_path("noap.png"))
+        noapcheck2=self.adbtool.compare(self.get_img_path("noap2.png"))
+        print("No Ap Check1:",noapcheck1,"No Ap Check2::",noapcheck2)
+        if noapcheck1 or noapcheck2:
             print("[INFO] Out of AP!")
             if self.counts >= 0:
                 self.counts -= 1
@@ -180,11 +186,15 @@ class auto():
             else:
                 self.adbtool.tap((840, 560))
                 print("[INFO] friend list refresh")
-                time.sleep(2)
+                time.sleep(4)
+            pos = self.cfg['class']['%s' %self.servant_class]
+            pos = pos.split(',')
+            self.adbtool.tap(pos)
 
     def advance_support(self, spt,clothes):
         flag1 = True #尋找指定的支援角色。
         flag2 = True #滾動邏輯
+        Friend_not_found_count=0
         # TODO 檢查確定進選好有畫面後再繼續動作
         while flag1:
             #spt_pos = self.adbtool.compare(spt,acc=0.85)
@@ -193,16 +203,23 @@ class auto():
 
             if spt_pos == False:
                 print("[INFO] Friend not found")
+                Friend_not_found_count+=1
+
                 if flag2:
+                    if Friend_not_found_count>=50:
+                        print("[INFO] 可能卡bug了，直接update_support")
+                        self.update_support()
+                        Friend_not_found_count = 0
+
                     bar_pos = self.adbtool.compare(
                         self.get_img_path("bar.png"))
                     if bar_pos:
-                        if self.debug:
-                            print("no bar")#沒滾輪 直接更新
+                        #if self.debug:
+                        print("no bar")#沒滾輪 直接更新
                         self.update_support()
                     else:
-                        if self.debug:
-                            print("have bar")
+                        #if self.debug:
+                        print("have bar")
                         flag2 = False
                         end_pos = self.adbtool.compare(
                             self.get_img_path("friendEnd.png"), acc=0.985)
@@ -211,13 +228,24 @@ class auto():
                             self.update_support()
                             flag2 = True
                         else:
+                            
                             gap_pos, gap_h, gap_w = self.adbtool.compare(
                                 self.get_img_path("friend_gap.png"), 0.8, True)
                             if gap_pos:
                                 gap_pos = [x for x in gap_pos]
-                                self.adbtool.swipe(
-                                    gap_pos[0]+(gap_w/2), 400, gap_pos[0]+(gap_w/2), 100, 0.2)
+                                self.adbtool.swipe(gap_pos[0]+(gap_w/2), 400, gap_pos[0]+(gap_w/2), 100, 0.2)
                                 time.sleep(0.5)
+                            else:
+                                gap_pos, gap_h, gap_w = self.adbtool.compare(
+                                self.get_img_path("friend_gap2.png"), 0.8, True)#有可能助戰是藍色的NPC
+                                if gap_pos:
+                                    gap_pos = [x for x in gap_pos]
+                                    self.adbtool.swipe(gap_pos[0]+(gap_w/2), 400, gap_pos[0]+(gap_w/2), 100, 0.2)
+                                else:
+                                    print("沒找到gap_pos，卡bug了")
+                                    self.update_support()
+                            # 假設您在某個地方需要滾動
+                            #self.adbtool.scroll(direction='down', distance=100, duration=500)  # 向上滾動
                 else:
                     bar_pos = self.adbtool.compare(
                         self.get_img_path("bar.png"))
@@ -239,27 +267,57 @@ class auto():
                                 self.get_img_path("friend_gap.png"), 0.8, True)
                             if gap_pos:
                                 gap_pos = [x for x in gap_pos]
-                                self.adbtool.swipe(
-                                    gap_pos[0]+(gap_w/2), 400, gap_pos[0]+(gap_w/2), 100, 0.2)
+                                self.adbtool.swipe(gap_pos[0]+(gap_w/2), 400, gap_pos[0]+(gap_w/2), 100, 0.2)
                                 time.sleep(0.5)
+                            else:
+                                gap_pos, gap_h, gap_w = self.adbtool.compare(
+                                self.get_img_path("friend_gap2.png"), 0.8, True)#有可能助戰是藍色的NPC
+                                if gap_pos:
+                                    gap_pos = [x for x in gap_pos]
+                                    self.adbtool.swipe(gap_pos[0]+(gap_w/2), 400, gap_pos[0]+(gap_w/2), 100, 0.2)
+                                else:
+                                    print("沒找到gap_pos，卡bug了")
+                                    self.update_support()
             else:
                
                 flag1 = False
                 self.adbtool.tap((int(spt_pos[0][0])+int(spt_pos[2]/2),
                                   int(spt_pos[0][1])+int(spt_pos[1]/2)), raw=True)
+                #print("找到妳囉")
                 
 
     def start_battle(self):
+        start_counter=0
         while not self.adbtool.compare(self.get_img_path("start.png")):
-            pass
+            #print("等待開始鍵")
+            start_counter+=1
+            if start_counter>=5:
+                if self.adbtool.compare(self.get_img_path("start2.png")):
+                    print("白癡喔是戰鬥開始")
+                    break
         self.adbtool.tap((1180, 670))
         print("[INFO] Battle started.  ")
 
     def select_servant_skill(self, skill: int, tar: int = 0):
+        maybe_skip_counter=0
         while not self.adbtool.compare(self.get_img_path("attack.png")):
            #print("[BATTLE] Waiting for Attack button")
+            maybe_skip_counter+=1
             self.adbtool.tap((920, 45))
             self.adbtool.tap((920, 45))
+            if maybe_skip_counter>=10:
+                pos = self.adbtool.compare(self.get_img_path("skip.png"))
+                pos2 = self.adbtool.compare(self.get_img_path("skip_auto.png"))
+                if pos or pos2:
+                    print("*****FIND SKIP*****")
+                    self.adbtool.tap((1240, 45))
+                    time.sleep(1)
+                    pos = False
+                    while not pos:
+                        pos = self.adbtool.compare(self.get_img_path("skip_yes.png"))
+                    print("*****SKIP THAT SHIT*****")
+                    self.adbtool.tap((int(pos[0][0])+int(pos[2]/2),int(pos[0][1])+int(pos[1]/2)), raw=True)
+                maybe_skip_counter=0
         pos = self.cfg['skills']['%s' % skill]
         pos = pos.split(',')
         self.adbtool.tap(pos)
@@ -372,7 +430,7 @@ class auto():
 
     def select_master_skill(self, skill: int, org: int = 0, tar: int = 0):
         time.sleep(0.3)
-        print("[Select] Master Skill",org,tar)
+        #print("[Select] Master Skill",org,tar)
         while not self.adbtool.compare(self.get_img_path("attack.png")):
             #print("[BATTLE] Waiting for Attack button")
             self.adbtool.tap((920, 45))
@@ -415,11 +473,15 @@ class auto():
         time.sleep(0.5)
     def finish_battle(self):
         # TODO 最佳化辨識流程
+
         while not self.adbtool.compare(self.get_img_path("next.png")):
             #print("[FINISH] Waiting next button")
-            self.adbtool.tap((920, 45))
+            self.adbtool.tap((1000, 45))
         print("[FINISH] Battle finish      ")
         self.adbtool.tap((1105, 670))
+        time.sleep(1)
+
+
         if self.now_time < self.run_time:
             continue_flag = True
         else:
@@ -430,18 +492,25 @@ class auto():
         while flag:
             time.sleep(0.1)
             pos = self.adbtool.compare(self.get_img_path("friendrequest.png"))
-            self.adbtool.tap((920, 45))
+            self.adbtool.tap((1000, 45))
             if pos and not friend_flag:
                 self.adbtool.tap((330, 610))
                 friend_flag = True
                 print("[FINISH] Reject friend request")
             else:
-                pos = self.adbtool.compare(self.get_img_path("continue.png"))
-                if pos:
-                    flag = False
-                elif self.adbtool.compare(self.get_img_path(self.checkpoint)):
-                    flag = False
-                    ckp = True
+                if self.adbtool.compare(self.get_img_path("next.png")):
+                    self.adbtool.tap((1105, 670))
+                elif self.adbtool.compare(self.get_img_path("ingame_close.png")):
+                    pos = self.adbtool.compare(self.get_img_path("ingame_close.png"))
+                    self.adbtool.tap((int(pos[0][0])+int(pos[2]/2),
+                                    int(pos[0][1])+int(pos[1]/2)), raw=True)
+                else:
+                    pos = self.adbtool.compare(self.get_img_path("continue.png"))
+                    if pos:
+                        flag = False
+                    elif self.adbtool.compare(self.get_img_path(self.checkpoint)):
+                        flag = False
+                        ckp = True
         self.t_end = time.time()
         self.total_time += int(self.t_end-self.t_begin)
         print("執行 {0} 次;用時 {1} 秒; 總計 {2} 秒;".format(

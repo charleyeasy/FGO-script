@@ -28,5 +28,5 @@ def capture_and_save_screenshot(device):
 
 if __name__ == "__main__":
     # 假設設備名稱為 "emulator-5556"，請根據實際情況修改
-    device = "emulator-5556"
+    device = "emulator-5554"
     capture_and_save_screenshot(device)
